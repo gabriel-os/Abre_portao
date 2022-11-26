@@ -11,6 +11,7 @@ import android.graphics.PixelFormat;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
@@ -25,12 +26,24 @@ import com.hoho.android.usbserial.driver.UsbSerialDriver;
 import com.hoho.android.usbserial.driver.UsbSerialPort;
 import com.hoho.android.usbserial.driver.UsbSerialProber;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import android.view.WindowManager;
 
 
 public class MainActivity extends AppCompatActivity {
+
+
+    private String filename = "code.txt";
+    private String filepath = "port";
+    File myExternalFile;
+    String myData = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,10 +57,12 @@ public class MainActivity extends AppCompatActivity {
         Button btn = (Button)findViewById(R.id.btnAbrir);
         @SuppressLint({"MissingInflatedId", "LocalSuppress"}) FloatingActionButton fab = (FloatingActionButton)findViewById(R.id.fab_edit);
 
+        //Troca de codigo
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                doChangeCode();
+                String teste = readInfo();
+                doChangeCode(teste);
             }
         });
 
@@ -78,17 +93,15 @@ public class MainActivity extends AppCompatActivity {
                 }
                 try {
                     port.setParameters(9600, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
-                    String texto = "Sinal enviado";
-                    int duracao = Toast.LENGTH_SHORT;
-                    Context contexto = getApplicationContext();
-                    Toast toast = Toast.makeText(contexto, texto,duracao);
-                    toast.show();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
+                //Envio de sinal
                 try {
-                    port.write("14".getBytes(), 1);
+                    String code = readInfo();
+                    port.write(code.getBytes(), 1);
+                    showMessage("Sinal Enviado", Toast.LENGTH_LONG);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -97,25 +110,18 @@ public class MainActivity extends AppCompatActivity {
 
         }
 
-        public void doChangeCode(){
-            AlertDialog.Builder alert = new AlertDialog.Builder(this);
+        public void doChangeCode(String code){
+            AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
 
             alert.setTitle("Troca de código");
             alert.setMessage("Digite o código criptografico");
 
-            // Set an EditText view to get user input
             final EditText input = new EditText(this);
-            input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
-            input.setText("14");
+            //input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+
+            input.setText(code);
 
             alert.setView(input);
-
-            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-
-                    // Do something with value!
-                }
-            });
 
             alert.setNegativeButton("Cancelar", new DialogInterface.OnClickListener() {
                 public void onClick(DialogInterface dialog, int whichButton) {
@@ -123,6 +129,77 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
 
+            alert.setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    writeInfo(input.getText().toString());
+                }
+            });
+
             alert.show();
         }
+
+        public void showMessage(String message, int duration){
+            Context context = getApplicationContext();
+            Toast toast = Toast.makeText(context, message, duration);
+            toast.show();
+        }
+
+        public void writeInfo(String code){
+
+            myExternalFile = new File(getExternalFilesDir(filepath), filename);
+
+            try {
+                FileOutputStream fos = new FileOutputStream(myExternalFile, false);
+                fos.write(code.getBytes());
+                fos.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            showMessage("Código salvo com sucesso", Toast.LENGTH_SHORT);
+        }
+
+        public String readInfo(){
+
+            myData = "";
+
+            myExternalFile = new File(getExternalFilesDir(filepath), filename);
+
+            if (!myExternalFile.exists() ){
+                return "";
+            }
+
+            try {
+                FileInputStream fis = new FileInputStream(myExternalFile);
+                DataInputStream in = new DataInputStream(fis);
+                BufferedReader br =
+                        new BufferedReader(new InputStreamReader(in));
+                String strLine;
+                while ((strLine = br.readLine()) != null) {
+                    myData = myData + strLine;
+                }
+                in.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            //showMessage("Código lido", Toast.LENGTH_SHORT);
+            return myData;
+        }
+
+    private static boolean isExternalStorageReadOnly() {
+        String extStorageState = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED_READ_ONLY.equals(extStorageState)) {
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isExternalStorageAvailable() {
+        String extStorageState = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(extStorageState)) {
+            return true;
+        }
+        return false;
+    }
+
+
     }
