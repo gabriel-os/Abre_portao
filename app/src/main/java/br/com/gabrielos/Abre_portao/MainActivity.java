@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
@@ -30,7 +31,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener{
 
 
     private String filename = "code.txt";
@@ -39,6 +40,10 @@ public class MainActivity extends AppCompatActivity {
     String myData = "";
     boolean mbound = false;
 
+    private Button[] btn = new Button[4];
+    private Button btn_unfocus;
+    private int[] btn_id = {R.id.btn1, R.id.btn2, R.id.btn3};
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
 
@@ -46,11 +51,23 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
+        for(int i = 0; i < btn.length-1; i++){
+            System.out.println(btn[i]);
+            btn[i] = (Button) findViewById(btn_id[i]);
+            btn[i].setBackgroundColor(Color.rgb(207, 207, 207));
+            btn[i].setOnClickListener((View.OnClickListener) this);
+        }
+
+        btn_unfocus = btn[0];
+        btn_unfocus.setTextColor(Color.rgb(255, 255, 255));
+        btn_unfocus.setBackgroundColor(Color.rgb(3, 106, 150));
+
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         //getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
         //        WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
-        Button btn = (Button) findViewById(R.id.btnAbrir);
+        Button btnAcionar = (Button) findViewById(R.id.btnAbrir);
+
         @SuppressLint({"MissingInflatedId", "LocalSuppress"}) FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_edit);
 
         //Troca de codigo
@@ -62,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        btn.setOnClickListener(new View.OnClickListener() {
+        btnAcionar.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -198,9 +215,35 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    private void setFocus(Button btn_unfocus, Button btn_focus){
+        btn_unfocus.setTextColor(Color.rgb(49, 50, 51));
+        btn_unfocus.setBackgroundColor(Color.rgb(207, 207, 207));
+        btn_focus.setTextColor(Color.rgb(255, 255, 255));
+        btn_focus.setBackgroundColor(Color.rgb(3, 106, 150));
+        this.btn_unfocus = btn_focus;
+    }
+
 
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
         super.onPointerCaptureChanged(hasCapture);
+    }
+
+    public void onClick(View v) {
+        //setForcus(btn_unfocus, (Button) findViewById(v.getId()));
+        //Or use switch
+        switch (v.getId()){
+            case R.id.btn1 :
+                setFocus(this.btn_unfocus, btn[0]);
+                break;
+
+            case R.id.btn2 :
+                setFocus(this.btn_unfocus, btn[1]);
+                break;
+
+            case R.id.btn3 :
+                setFocus(this.btn_unfocus, btn[2]);
+                break;
+        }
     }
 }
